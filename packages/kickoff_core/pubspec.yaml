@@ -1,0 +1,25 @@
+name: kickoff_core
+description: >
+  Code partagé entre les deux apps Kickoff (Gestionnaire et Fans) :
+  thème graphique, modèles de données, et plus tard le service Supabase.
+  Ce package n'est jamais lancé seul — il est importé par les deux apps
+  via une dépendance de chemin local (voir leurs pubspec.yaml).
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: '>=3.19.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  google_fonts: ^6.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
