@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:kickoff_core/kickoff_core.dart';
 import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
+import 'package:kickoff_core/kickoff_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../routes.dart';
 
-/// Écran d'inscription. Ne crée volontairement aucune compétition —
-/// juste le compte. La création de compétition vient après, comme
-/// première action une fois connecté.
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -21,6 +20,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -31,8 +32,61 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
+  Future<void> _handleSignup() async {
+    setState(() => _errorMessage = null);
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirm = _confirmPasswordController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Merci de remplir tous les champs.');
+      return;
+    }
+    if (password != confirm) {
+      setState(() => _errorMessage = 'Les mots de passe ne correspondent pas.');
+      return;
+    }
+    if (password.length < 6) {
+      setState(() => _errorMessage = 'Le mot de passe doit faire au moins 6 caractères.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await SupabaseService.client.auth.signUp(
+        email: email,
+        password: password,
+        data: {'username': name},
+      );
+
+      if (!mounted) return;
+
+      if (response.session != null) {
+        Get.offAllNamed(AppRoutes.home);
+      } else {
+        Get.snackbar(
+          'Compte créé',
+          'Vérifie ta boîte mail pour confirmer ton adresse avant de te connecter.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        Get.back();
+      }
+    } on AuthException catch (e) {
+      setState(() => _errorMessage = e.message);
+    } catch (e) {
+      setState(() => _errorMessage = 'Une erreur est survenue. Vérifie ta connexion.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final palette = AppPalette.of(context);
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -40,19 +94,15 @@ class _SignupScreenState extends State<SignupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              //logo
               Image.asset('assets/images/icon_mark.png', width: 64, height: 64),
               const SizedBox(height: 20),
 
-              Text('Créer un compte', style: AppTextStyles.h1),
+              Text('Créer un compte', style: AppTextStyles.h1(context)),
               const SizedBox(height: 4),
-              Text(
-                'Vous pourrez créer votre première compétition juste après.',
-                style: AppTextStyles.bodySecondary,
-              ),
+              Text('Vous pourrez créer votre première compétition juste après.', style: AppTextStyles.bodySecondary(context)),
               const SizedBox(height: 28),
 
-              Text('Nom d\'utilisateur', style: AppTextStyles.bodySecondary),
+              Text("Nom d'utilisateur", style: AppTextStyles.bodySecondary(context)),
               const SizedBox(height: 6),
               TextField(
                 controller: _nameController,
@@ -61,7 +111,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 16),
 
-              Text('Email', style: AppTextStyles.bodySecondary),
+              Text('Email', style: AppTextStyles.bodySecondary(context)),
               const SizedBox(height: 6),
               TextField(
                 controller: _emailController,
@@ -70,7 +120,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 16),
 
-              Text('Mot de passe', style: AppTextStyles.bodySecondary),
+              Text('Mot de passe', style: AppTextStyles.bodySecondary(context)),
               const SizedBox(height: 6),
               TextField(
                 controller: _passwordController,
@@ -80,7 +130,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: AppColors.textMuted,
+                      color: palette.textMuted,
                       size: 20,
                     ),
                     onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -89,7 +139,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 16),
 
-              Text('Confirmer le mot de passe', style: AppTextStyles.bodySecondary),
+              Text('Confirmer le mot de passe', style: AppTextStyles.bodySecondary(context)),
               const SizedBox(height: 6),
               TextField(
                 controller: _confirmPasswordController,
@@ -99,20 +149,25 @@ class _SignupScreenState extends State<SignupScreen> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: AppColors.textMuted,
+                      color: palette.textMuted,
                       size: 20,
                     ),
                     onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
 
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(_errorMessage!, style: AppTextStyles.caption(context).copyWith(color: AppColors.danger)),
+              ],
+
+              const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () {
-                  // TODO: validation des champs + Supabase Auth (signUp)
-                },
-                child: const Text('Créer mon compte'),
+                onPressed: _isLoading ? null : _handleSignup,
+                child: _isLoading
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Créer mon compte'),
               ),
               const SizedBox(height: 16),
 
@@ -121,7 +176,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   const Expanded(child: Divider()),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('ou', style: AppTextStyles.caption),
+                    child: Text('ou', style: AppTextStyles.caption(context)),
                   ),
                   const Expanded(child: Divider()),
                 ],
@@ -130,7 +185,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
               OutlinedButton(
                 onPressed: () {
-                  // TODO: inscription Google via Supabase OAuth
+                  // TODO: inscription Google via Supabase OAuth (plus tard)
                 },
                 child: const Text("S'inscrire avec Google"),
               ),
@@ -139,10 +194,10 @@ class _SignupScreenState extends State<SignupScreen> {
               Center(
                 child: RichText(
                   text: TextSpan(
-                    style: AppTextStyles.bodySecondary,
+                    style: AppTextStyles.bodySecondary(context),
                     children: [
                       const TextSpan(text: 'Déjà un compte ? '),
-                        TextSpan(
+                      TextSpan(
                         text: 'Se connecter',
                         style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600),
                         recognizer: TapGestureRecognizer()..onTap = () => Get.back(),
