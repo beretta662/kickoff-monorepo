@@ -1,1 +1,8 @@
-build/ .dart_tool/ .packages .flutter-plugins .flutter-plugins-depends *.iml .idea/ android/local.properties
+**/build/
+**/.dart_tool/
+**/.packages
+**/.flutter-plugins
+**/.flutter-plugins-depends
+**/*.iml
+**/.idea/
+**/local.properties
