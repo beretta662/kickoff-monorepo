@@ -29,12 +29,28 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) => setState(() => _currentIndex = index),
         backgroundColor: palette.surface,
-        indicatorColor: AppColors.primaryLight,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Accueil'),
-          NavigationDestination(icon: Icon(Icons.emoji_events_outlined), selectedIcon: Icon(Icons.emoji_events), label: 'Compétitions'),
-          NavigationDestination(icon: Icon(Icons.share_outlined), selectedIcon: Icon(Icons.share), label: 'Partages'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
+        indicatorColor: Colors.transparent,
+        destinations: [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined, color: palette.textMuted),
+            selectedIcon: const Icon(Icons.home, color: AppColors.primary),
+            label: 'Accueil',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.emoji_events_outlined, color: palette.textMuted),
+            selectedIcon: const Icon(Icons.emoji_events, color: AppColors.primary),
+            label: 'Compétitions',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.share_outlined, color: palette.textMuted),
+            selectedIcon: const Icon(Icons.share, color: AppColors.primary),
+            label: 'Partages',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline, color: palette.textMuted),
+            selectedIcon: const Icon(Icons.person, color: AppColors.primary),
+            label: 'Profil',
+          ),
         ],
       ),
     );

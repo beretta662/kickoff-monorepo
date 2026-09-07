@@ -63,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 60),
-              Image.asset('assets/images/icon_mark.png', width: 64, height: 64),
+              Image.asset('assets/images/icon_mark.png', width: 64, height: 64, filterQuality: FilterQuality.high),
               const SizedBox(height: 20),
 
               Text('Kickoff', style: AppTextStyles.h1(context)),

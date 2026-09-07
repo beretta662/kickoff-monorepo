@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kickoff_core/kickoff_core.dart';
 import 'home_controller.dart';
+import '../../routes.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -65,7 +66,7 @@ class _HomeHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              Image.asset('assets/images/icon_mark.png', width: 28, height: 28),
+              Image.asset('assets/images/icon_mark.png', width: 28, height: 28, filterQuality: FilterQuality.high),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,9 +115,7 @@ class _EmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () {
-              // TODO: navigation vers la création de compétition
-            },
+            onPressed: () => Get.toNamed(AppRoutes.createCompetition),
             child: const Text('Créer une compétition'),
           ),
         ],
