@@ -160,9 +160,7 @@ class _NoMatchTodayState extends StatelessWidget {
                 title: Text(c.nom, style: AppTextStyles.body(context)),
                 subtitle: Text('${c.nombreEquipes} équipes · ${c.journeeActuelle ?? ""}', style: AppTextStyles.caption(context)),
                 trailing: Icon(Icons.chevron_right, size: 18, color: palette.textMuted),
-                onTap: () {
-                  // TODO: navigation vers la compétition
-                },
+                onTap: () => Get.toNamed('${AppRoutes.competitionDraft}?id=${c.id}'),
               ),
             )),
       ],

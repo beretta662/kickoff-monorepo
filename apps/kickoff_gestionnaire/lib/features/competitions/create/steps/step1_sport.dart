@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kickoff_core/kickoff_core.dart';
 import '../create_competition_controller.dart';
+import '../../../../shared/widgets/dashed_border_painter.dart';
 
 class Step1Sport extends StatelessWidget {
   const Step1Sport({super.key});
@@ -122,7 +123,7 @@ class _SportCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: dashed
           ? CustomPaint(
-              painter: _DashedBorderPainter(color: borderColor),
+              painter: DashedBorderPainter(color: borderColor),
               child: Container(alignment: Alignment.center, child: content),
             )
           : Container(
@@ -134,46 +135,4 @@ class _SportCard extends StatelessWidget {
             ),
     );
   }
-}
-
-/// Dessine une bordure en pointillés autour d'un rectangle arrondi.
-/// Pas de package externe pour ça — juste un tracé de trait découpé
-/// en petits segments (5px de trait, 4px de vide).
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  const _DashedBorderPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    final rrect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      const Radius.circular(10),
-    );
-    final path = Path()..addRRect(rrect);
-
-    const dashWidth = 5.0;
-    const dashSpace = 4.0;
-    final dashPath = Path();
-
-    for (final metric in path.computeMetrics()) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final next = distance + dashWidth;
-        dashPath.addPath(
-          metric.extractPath(distance, next.clamp(0, metric.length)),
-          Offset.zero,
-        );
-        distance = next + dashSpace;
-      }
-    }
-    canvas.drawPath(dashPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) => oldDelegate.color != color;
 }

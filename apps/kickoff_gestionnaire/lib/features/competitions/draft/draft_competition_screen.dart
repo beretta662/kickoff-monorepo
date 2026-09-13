@@ -1,0 +1,204 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:kickoff_core/kickoff_core.dart';
+import '../../../shared/widgets/dashed_border_painter.dart';
+import '../teams/add_team_screen.dart';
+import 'draft_competition_controller.dart';
+
+class DraftCompetitionScreen extends StatelessWidget {
+  final String competitionId;
+  const DraftCompetitionScreen({super.key, required this.competitionId});
+
+  /// "Lions FC" -> "LF", "FC Etoudi" -> "FE". Prend la première lettre
+  /// des deux premiers mots du nom de l'équipe.
+  String _initiales(String nom) {
+    final mots = nom.trim().split(RegExp(r'\s+'));
+    if (mots.isEmpty || mots.first.isEmpty) return '?';
+    final premiere = mots[0][0];
+    final seconde = mots.length > 1 && mots[1].isNotEmpty ? mots[1][0] : '';
+    return (premiere + seconde).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.put(DraftCompetitionController(competitionId: competitionId), tag: competitionId);
+    final palette = AppPalette.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Obx(() => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(child: Text(controller.nom.value, overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
+                if (controller.statut.value == 'brouillon')
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: AppColors.warningBg, borderRadius: BorderRadius.circular(6)),
+                    child: Text('Brouillon', style: AppTextStyles.caption(context).copyWith(color: AppColors.warning)),
+                  ),
+              ],
+            )),
+      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(controller.sousTitre, style: AppTextStyles.bodySecondary(context)),
+                const SizedBox(height: 16),
+
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: palette.background, borderRadius: BorderRadius.circular(10)),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 20, color: palette.textSecondary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          "Ajoutez vos équipes au fur et à mesure. Rien n'est figé tant que la compétition n'est pas lancée.",
+                          style: AppTextStyles.caption(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Équipes ajoutées', style: AppTextStyles.bodySecondary(context)),
+                    Text('${controller.equipes.length} sur ${controller.nombreEquipesPrevu.value} prévues', style: AppTextStyles.caption(context)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: controller.nombreEquipesPrevu.value == 0
+                        ? 0
+                        : (controller.equipes.length / controller.nombreEquipesPrevu.value).clamp(0, 1),
+                    minHeight: 4,
+                    backgroundColor: palette.border,
+                    valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: controller.equipes.length,
+                    itemBuilder: (context, index) {
+                      final equipe = controller.equipes[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.primaryLight,
+                          child: Text(
+                            _initiales(equipe.nom),
+                            style: AppTextStyles.caption(context).copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        title: Text(equipe.nom, style: AppTextStyles.body(context)),
+                        trailing: const Icon(Icons.check, color: AppColors.success, size: 20),
+                      );
+                    },
+                  ),
+                ),
+
+                InkWell(
+                  onTap: () async {
+                    final equipe = await Get.to<Equipe>(() => AddTeamScreen(competitionId: competitionId));
+                    if (equipe != null) controller.equipes.add(equipe);
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: CustomPaint(
+                    painter: DashedBorderPainter(color: palette.borderStrong, radius: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, size: 20, color: palette.textSecondary),
+                          const SizedBox(width: 6),
+                          Text('Ajouter une équipe', style: AppTextStyles.caption(context)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+
+                InkWell(
+                  onTap: () => _showModifierNombreDialog(context, controller),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Text(
+                        "Modifier le nombre d'équipes prévu",
+                        style: AppTextStyles.caption(context).copyWith(color: AppColors.accent),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final success = await controller.lancerCompetition();
+                    if (success) Get.back();
+                  },
+                  icon: const Icon(Icons.flag_outlined, size: 20),
+                  label: const Text('Lancer la compétition'),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Le calendrier sera généré et les équipes ne pourront plus être ajoutées ou retirées après le lancement.',
+                  style: AppTextStyles.caption(context),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
+  void _showModifierNombreDialog(BuildContext context, DraftCompetitionController controller) {
+    final textController = TextEditingController(text: '${controller.nombreEquipesPrevu.value}');
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Nombre d'équipes prévu"),
+        content: TextField(
+          controller: textController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(hintText: 'Ex. 8'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () {
+              final valeur = int.tryParse(textController.text);
+              if (valeur != null && valeur > 0) controller.changerNombreEquipesPrevu(valeur);
+              Get.back();
+            },
+            child: const Text('Valider'),
+          ),
+        ],
+      ),
+    );
+  }
+}
