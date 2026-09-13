@@ -15,6 +15,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: brightness,
       scaffoldBackgroundColor: palette.background,
+      canvasColor: palette.surface,
       primaryColor: AppColors.primary,
       textTheme: GoogleFonts.interTextTheme(
         brightness == Brightness.dark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
