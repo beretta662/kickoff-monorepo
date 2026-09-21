@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kickoff_core/kickoff_core.dart';
+import '../../../routes.dart';
 import '../../../shared/widgets/dashed_border_painter.dart';
 import '../teams/add_team_screen.dart';
 import 'draft_competition_controller.dart';
+import 'launch_competition_screen.dart';
 
 class DraftCompetitionScreen extends StatelessWidget {
   final String competitionId;
   const DraftCompetitionScreen({super.key, required this.competitionId});
 
-  /// "Lions FC" -> "LF", "FC Etoudi" -> "FE". Prend la première lettre
-  /// des deux premiers mots du nom de l'équipe.
   String _initiales(String nom) {
     final mots = nom.trim().split(RegExp(r'\s+'));
     if (mots.isEmpty || mots.first.isEmpty) return '?';
@@ -43,6 +43,25 @@ class DraftCompetitionScreen extends StatelessWidget {
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
+        }
+
+        if (controller.statut.value == 'active') {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Cette compétition est déjà lancée.', style: AppTextStyles.body(context)),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () => Get.offNamed('${AppRoutes.calendar}?id=$competitionId'),
+                    child: const Text('Voir le calendrier'),
+                  ),
+                ],
+              ),
+            ),
+          );
         }
 
         return SafeArea(
@@ -154,10 +173,7 @@ class DraftCompetitionScreen extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 ElevatedButton.icon(
-                  onPressed: () async {
-                    final success = await controller.lancerCompetition();
-                    if (success) Get.back();
-                  },
+                  onPressed: () => Get.to(() => LaunchCompetitionScreen(controller: controller)),
                   icon: const Icon(Icons.flag_outlined, size: 20),
                   label: const Text('Lancer la compétition'),
                 ),

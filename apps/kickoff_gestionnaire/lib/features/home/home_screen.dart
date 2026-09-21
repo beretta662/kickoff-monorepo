@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kickoff_core/kickoff_core.dart';
-import 'home_controller.dart';
 import '../../routes.dart';
+import 'home_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -66,7 +66,7 @@ class _HomeHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-              Image.asset('assets/images/icon_mark.png', width: 28, height: 28, filterQuality: FilterQuality.high),
+              Image.asset('assets/images/icon_mark.png', width: 28, height: 28),
               const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,7 +160,13 @@ class _NoMatchTodayState extends StatelessWidget {
                 title: Text(c.nom, style: AppTextStyles.body(context)),
                 subtitle: Text('${c.nombreEquipes} équipes · ${c.journeeActuelle ?? ""}', style: AppTextStyles.caption(context)),
                 trailing: Icon(Icons.chevron_right, size: 18, color: palette.textMuted),
-                onTap: () => Get.toNamed('${AppRoutes.competitionDraft}?id=${c.id}'),
+                onTap: () {
+                  if (c.statut == 'active') {
+                    Get.toNamed('${AppRoutes.calendar}?id=${c.id}');
+                  } else {
+                    Get.toNamed('${AppRoutes.competitionDraft}?id=${c.id}');
+                  }
+                },
               ),
             )),
       ],
@@ -191,8 +197,9 @@ class _MatchesTodayState extends StatelessWidget {
                     Text('${m.equipeDomicile} — ${m.equipeExterieur}', style: AppTextStyles.body(context)),
                     const SizedBox(height: 10),
                     ElevatedButton(
-                      onPressed: () {
-                        // TODO: navigation vers l'écran de match en direct
+                      onPressed: () async {
+                        await Get.toNamed('${AppRoutes.liveMatch}?id=${m.id}');
+                        controller.loadData();
                       },
                       child: const Text('Démarrer le match'),
                     ),

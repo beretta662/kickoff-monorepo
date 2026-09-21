@@ -5,6 +5,8 @@ import 'features/auth/signup_screen.dart';
 import 'features/navigation/main_navigation_screen.dart';
 import 'features/competitions/create/create_competition_screen.dart';
 import 'features/competitions/draft/draft_competition_screen.dart';
+import 'features/competitions/calendar/calendar_screen.dart';
+import 'features/live_match/live_match_screen.dart';
 
 final List<GetPage> appPages = [
   GetPage(name: AppRoutes.login, page: () => const LoginScreen()),
@@ -14,5 +16,13 @@ final List<GetPage> appPages = [
   GetPage(
     name: AppRoutes.competitionDraft,
     page: () => DraftCompetitionScreen(competitionId: Get.parameters['id']!),
+  ),
+  GetPage(
+    name: AppRoutes.calendar,
+    page: () => CalendarScreen(competitionId: Get.parameters['id']!),
+  ),
+  GetPage(
+    name: AppRoutes.liveMatch,
+    page: () => LiveMatchScreen(matchId: Get.parameters['id']!),
   ),
 ];

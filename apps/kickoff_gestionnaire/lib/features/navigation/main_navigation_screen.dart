@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kickoff_core/kickoff_core.dart';
 import '../home/home_screen.dart';
+import '../competitions/list/competitions_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -14,7 +15,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final _screens = const [
     HomeScreen(),
-    _PlaceholderScreen(title: 'Compétitions'),
+    CompetitionsScreen(),
     _PlaceholderScreen(title: 'Partages'),
     _PlaceholderScreen(title: 'Profil'),
   ];
