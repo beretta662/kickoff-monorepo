@@ -44,6 +44,7 @@ class CompetitionListItem {
 class CompetitionsController extends GetxController {
   final competitions = <CompetitionListItem>[].obs;
   final isLoading = true.obs;
+  final loadFailed = false.obs;
   final expandedId = RxnString();
 
   @override
@@ -54,19 +55,22 @@ class CompetitionsController extends GetxController {
 
   Future<void> loadCompetitions() async {
     isLoading.value = true;
+    loadFailed.value = false;
     try {
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return;
+      final response = await withRetry(() async {
+        final userId = SupabaseService.client.auth.currentUser?.id;
+        if (userId == null) throw Exception('Session indisponible');
 
-      final response = await SupabaseService.client
-          .from('competitions')
-          .select('*, equipes(count)')
-          .eq('gestionnaire_id', userId)
-          .order('created_at', ascending: false);
+        return await SupabaseService.client
+            .from('competitions')
+            .select('*, equipes(count)')
+            .eq('gestionnaire_id', userId)
+            .order('created_at', ascending: false);
+      });
 
       competitions.value = (response as List).map((c) => CompetitionListItem.fromMap(c)).toList();
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de charger vos compétitions.', snackPosition: SnackPosition.BOTTOM);
+      loadFailed.value = true;
     } finally {
       isLoading.value = false;
     }

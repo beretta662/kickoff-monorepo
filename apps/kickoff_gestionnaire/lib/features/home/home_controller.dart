@@ -56,6 +56,7 @@ class HomeController extends GetxController {
   final competitions = <CompetitionSummary>[].obs;
   final todaysMatches = <MatchDuJour>[].obs;
   final isLoading = true.obs;
+  final loadFailed = false.obs;
 
   bool get hasCompetitions => competitions.isNotEmpty;
   bool get hasMatchesToday => todaysMatches.isNotEmpty;
@@ -71,41 +72,50 @@ class HomeController extends GetxController {
 
   Future<void> loadData() async {
     isLoading.value = true;
+    loadFailed.value = false;
     try {
-      final userId = SupabaseService.client.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final competitionsResponse = await SupabaseService.client
-          .from('competitions')
-          .select()
-          .eq('gestionnaire_id', userId);
-
-      competitions.value = (competitionsResponse as List)
-          .map((row) => CompetitionSummary.fromMap(row))
-          .toList();
-
-      if (competitions.isNotEmpty) {
-        final competitionIds = competitions.map((c) => c.id).toList();
-        final now = DateTime.now();
-        final startOfDay = DateTime(now.year, now.month, now.day);
-        final endOfDay = startOfDay.add(const Duration(days: 1));
-
-        final matchesResponse = await SupabaseService.client
-            .from('matchs')
-            .select()
-            .inFilter('competition_id', competitionIds)
-            .neq('statut', 'termine')
-            .gte('date_heure', startOfDay.toIso8601String())
-            .lt('date_heure', endOfDay.toIso8601String());
-
-        todaysMatches.value = (matchesResponse as List)
-            .map((row) => MatchDuJour.fromMap(row))
-            .toList();
-      }
+      await withRetry(_fetch);
     } catch (e) {
-      Get.snackbar('Erreur', 'Impossible de charger les données.', snackPosition: SnackPosition.BOTTOM);
+      loadFailed.value = true;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> _fetch() async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    // Session pas encore prête : on lève une erreur pour déclencher un
+    // nouvel essai, plutôt que d'afficher à tort "aucune compétition".
+    if (userId == null) throw Exception('Session indisponible');
+
+    final competitionsResponse = await SupabaseService.client
+        .from('competitions')
+        .select()
+        .eq('gestionnaire_id', userId);
+
+    final liste = (competitionsResponse as List).map((row) => CompetitionSummary.fromMap(row)).toList();
+
+    var matchsDuJour = <MatchDuJour>[];
+    if (liste.isNotEmpty) {
+      final competitionIds = liste.map((c) => c.id).toList();
+      final now = DateTime.now();
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final matchesResponse = await SupabaseService.client
+          .from('matchs')
+          .select()
+          .inFilter('competition_id', competitionIds)
+          .neq('statut', 'termine')
+          .gte('date_heure', startOfDay.toIso8601String())
+          .lt('date_heure', endOfDay.toIso8601String());
+
+      matchsDuJour = (matchesResponse as List).map((row) => MatchDuJour.fromMap(row)).toList();
+    }
+
+    // On n'écrit dans les listes qu'une fois les deux requêtes réussies,
+    // pour ne jamais afficher un état à moitié chargé.
+    competitions.value = liste;
+    todaysMatches.value = matchsDuJour;
   }
 }

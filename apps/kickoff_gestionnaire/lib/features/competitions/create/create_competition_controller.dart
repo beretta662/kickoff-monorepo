@@ -25,6 +25,8 @@ class CreateCompetitionController extends GetxController {
   final nom = ''.obs;
   final nombreEquipesPrevu = 6.obs;
   final allerRetour = true.obs;
+  final nombreTitulaires = 11.obs;
+  final effectifMax = 18.obs;
 
   // Étape 5
   final joursDeMatch = <String>{'Sam', 'Dim'}.obs;
@@ -128,6 +130,8 @@ class CreateCompetitionController extends GetxController {
         'gestionnaire_id': userId,
         'nom': nom.value.trim(),
         'nombre_equipes': nombreEquipesPrevu.value,
+        'nombre_titulaires': nombreTitulaires.value,
+        'effectif_max': effectifMax.value,
         'statut': 'brouillon',
         'sport': sport.value,
         'type': type.value == CompetitionType.championnat ? 'championnat' : 'coupe',

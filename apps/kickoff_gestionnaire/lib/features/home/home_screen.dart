@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:kickoff_core/kickoff_core.dart';
 import '../../routes.dart';
+import '../../shared/widgets/load_error_view.dart';
 import 'home_controller.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -25,6 +26,9 @@ class HomeScreen extends StatelessWidget {
             child: Obx(() {
               if (controller.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
+              }
+              if (controller.loadFailed.value) {
+                return LoadErrorView(onRetry: controller.loadData);
               }
               if (!controller.hasCompetitions) {
                 return const _EmptyState();

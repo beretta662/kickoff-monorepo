@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:kickoff_core/kickoff_core.dart';
 import '../../../routes.dart';
 import '../../../shared/widgets/coming_soon_screen.dart';
+import '../../../shared/widgets/load_error_view.dart';
 import '../draft/draft_competition_screen.dart';
 import 'competitions_controller.dart';
 
@@ -45,6 +46,9 @@ class CompetitionsScreen extends StatelessWidget {
               child: Obx(() {
                 if (controller.isLoading.value) {
                   return const Center(child: CircularProgressIndicator());
+                }
+                if (controller.loadFailed.value) {
+                  return LoadErrorView(onRetry: controller.loadCompetitions);
                 }
                 if (controller.competitions.isEmpty) {
                   return Center(
@@ -159,7 +163,7 @@ class _CompetitionAccordionItem extends StatelessWidget {
       childAspectRatio: 0.9,
       children: [
         _QuickAction(icon: Icons.list_alt_outlined, label: 'Classement', palette: palette, onTap: () {
-          Get.to(() => const ComingSoonScreen(featureName: 'Classement'));
+          Get.toNamed('${AppRoutes.standings}?id=${competition.id}');
         }),
         _QuickAction(icon: Icons.swap_horiz, label: 'Transferts', palette: palette, onTap: () {
           Get.to(() => const ComingSoonScreen(featureName: 'Transferts'));

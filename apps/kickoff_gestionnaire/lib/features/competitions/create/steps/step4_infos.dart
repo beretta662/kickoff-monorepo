@@ -104,6 +104,35 @@ class _Step4InfosState extends State<Step4Infos> {
                 title: Text('Aller-retour', style: AppTextStyles.body(context)),
                 subtitle: Text('Chaque équipe joue deux fois', style: AppTextStyles.caption(context)),
               )),
+
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _CompactStepper(
+                  label: 'Titulaires',
+                  valueGetter: () => controller.nombreTitulaires.value,
+                  onDecrement: () {
+                    if (controller.nombreTitulaires.value > 1) controller.nombreTitulaires.value--;
+                  },
+                  onIncrement: () => controller.nombreTitulaires.value++,
+                  palette: palette,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _CompactStepper(
+                  label: 'Effectif max',
+                  valueGetter: () => controller.effectifMax.value,
+                  onDecrement: () {
+                    if (controller.effectifMax.value > controller.nombreTitulaires.value) controller.effectifMax.value--;
+                  },
+                  onIncrement: () => controller.effectifMax.value++,
+                  palette: palette,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -129,5 +158,44 @@ class _StepperButton extends StatelessWidget {
         child: Icon(icon, size: 16, color: palette.textSecondary),
       ),
     );
+  }
+}
+
+class _CompactStepper extends StatelessWidget {
+  final String label;
+  final int Function() valueGetter;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
+  final AppPalette palette;
+
+  const _CompactStepper({
+    required this.label,
+    required this.valueGetter,
+    required this.onDecrement,
+    required this.onIncrement,
+    required this.palette,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: AppTextStyles.caption(context)),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(border: Border.all(color: palette.borderStrong), borderRadius: BorderRadius.circular(8)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  InkWell(onTap: onDecrement, child: Icon(Icons.remove, size: 16, color: palette.textSecondary)),
+                  Text('${valueGetter()}', style: AppTextStyles.body(context)),
+                  InkWell(onTap: onIncrement, child: Icon(Icons.add, size: 16, color: palette.textSecondary)),
+                ],
+              ),
+            ),
+          ],
+        ));
   }
 }

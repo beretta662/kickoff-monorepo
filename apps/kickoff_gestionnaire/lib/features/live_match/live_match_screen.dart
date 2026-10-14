@@ -14,7 +14,6 @@ class LiveMatchScreen extends StatelessWidget {
     final palette = AppPalette.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Match en direct')),
       body: Obx(() {
         if (controller.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -26,106 +25,115 @@ class LiveMatchScreen extends StatelessWidget {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(width: 7, height: 7, decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle)),
-                    const SizedBox(width: 6),
-                    Text('En direct', style: AppTextStyles.caption(context).copyWith(color: AppColors.success)),
-                    const Spacer(),
-                    Text("${controller.minutesEcoulees.value}'", style: AppTextStyles.caption(context)),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle)),
+                        const SizedBox(width: 8),
+                        Text('En direct', style: AppTextStyles.body(context).copyWith(color: AppColors.success)),
+                        const Spacer(),
+                        Text("${controller.minutesEcoulees.value}'", style: AppTextStyles.bodySecondary(context)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text(controller.equipeDomicile.value, style: AppTextStyles.body(context), textAlign: TextAlign.center),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${controller.scoreDomicile.value}',
-                            style: AppTextStyles.score(context).copyWith(color: domicileGagne ? AppColors.success : AppColors.danger),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(controller.equipeDomicile.value, style: AppTextStyles.body(context), textAlign: TextAlign.center),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${controller.scoreDomicile.value}',
+                                style: AppTextStyles.score(context).copyWith(color: domicileGagne ? AppColors.success : AppColors.danger),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 24),
+                          child: Text('—', style: AppTextStyles.bodySecondary(context)),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(controller.equipeExterieur.value, style: AppTextStyles.body(context), textAlign: TextAlign.center),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${controller.scoreExterieur.value}',
+                                style: AppTextStyles.score(context).copyWith(color: exterieurGagne ? AppColors.success : AppColors.danger),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 2.4,
+                      children: [
+                        _ActionButton(
+                          icon: Icons.sports_soccer,
+                          label: 'But',
+                          palette: palette,
+                          onTap: () => _choisirEquipePourBut(context, controller),
+                        ),
+                        _ActionButton(
+                          icon: Icons.swap_horiz,
+                          label: 'Passe',
+                          palette: palette,
+                          onTap: () => Get.to(() => const ComingSoonScreen(featureName: 'Passe décisive')),
+                        ),
+                        _ActionButton(
+                          icon: Icons.crop_portrait,
+                          label: 'Carton',
+                          palette: palette,
+                          onTap: () => Get.to(() => const ComingSoonScreen(featureName: 'Cartons')),
+                        ),
+                        _ActionButton(
+                          icon: Icons.watch_later_outlined,
+                          label: 'Mi-temps',
+                          palette: palette,
+                          onTap: () => Get.to(() => const ComingSoonScreen(featureName: 'Mi-temps')),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    Text('Fil du match', style: AppTextStyles.bodySecondary(context)),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 80,
+                      child: Center(
+                        child: Text(
+                          controller.scoreDomicile.value == 0 && controller.scoreExterieur.value == 0
+                              ? 'Le match vient de commencer.'
+                              : 'Détail des événements à venir.',
+                          style: AppTextStyles.caption(context),
+                        ),
                       ),
                     ),
-                    Text('—', style: AppTextStyles.caption(context)),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          Text(controller.equipeExterieur.value, style: AppTextStyles.body(context), textAlign: TextAlign.center),
-                          const SizedBox(height: 6),
-                          Text(
-                            '${controller.scoreExterieur.value}',
-                            style: AppTextStyles.score(context).copyWith(color: exterieurGagne ? AppColors.success : AppColors.danger),
-                          ),
-                        ],
-                      ),
+
+                    OutlinedButton(
+                      onPressed: () => _confirmerFinDeMatch(context, controller),
+                      child: Text('Terminer le match', style: AppTextStyles.button.copyWith(color: AppColors.danger)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                  childAspectRatio: 2.6,
-                  children: [
-                    _ActionButton(
-                      icon: Icons.sports_soccer,
-                      label: 'But',
-                      palette: palette,
-                      onTap: () => _choisirEquipePourBut(context, controller),
-                    ),
-                    _ActionButton(
-                      icon: Icons.swap_horiz,
-                      label: 'Passe',
-                      palette: palette,
-                      onTap: () => Get.to(() => const ComingSoonScreen(featureName: 'Passe décisive')),
-                    ),
-                    _ActionButton(
-                      icon: Icons.crop_portrait,
-                      label: 'Carton',
-                      palette: palette,
-                      onTap: () => Get.to(() => const ComingSoonScreen(featureName: 'Cartons')),
-                    ),
-                    _ActionButton(
-                      icon: Icons.pause_circle_outline,
-                      label: 'Mi-temps',
-                      palette: palette,
-                      onTap: () => Get.to(() => const ComingSoonScreen(featureName: 'Mi-temps')),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                Text('Fil du match', style: AppTextStyles.bodySecondary(context)),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      controller.scoreDomicile.value == 0 && controller.scoreExterieur.value == 0
-                          ? 'Le match vient de commencer.'
-                          : 'Détail des événements à venir.',
-                      style: AppTextStyles.caption(context),
-                    ),
-                  ),
-                ),
-
-                OutlinedButton(
-                  onPressed: () => _confirmerFinDeMatch(context, controller),
-                  child: Text('Terminer le match', style: AppTextStyles.button.copyWith(color: AppColors.danger)),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -141,20 +149,14 @@ class LiveMatchScreen extends StatelessWidget {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              title: Text(controller.equipeDomicile.value),
-              onTap: () {
-                controller.ajouterButPourDomicile();
-                Get.back();
-              },
-            ),
-            ListTile(
-              title: Text(controller.equipeExterieur.value),
-              onTap: () {
-                controller.ajouterButPourExterieur();
-                Get.back();
-              },
-            ),
+            ListTile(title: Text(controller.equipeDomicile.value), onTap: () {
+              controller.ajouterButPourDomicile();
+              Get.back();
+            }),
+            ListTile(title: Text(controller.equipeExterieur.value), onTap: () {
+              controller.ajouterButPourExterieur();
+              Get.back();
+            }),
           ],
         ),
       ),

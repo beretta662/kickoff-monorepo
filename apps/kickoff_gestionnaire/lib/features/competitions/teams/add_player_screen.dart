@@ -5,7 +5,7 @@ import '../../../shared/widgets/dashed_border_painter.dart';
 import 'team_form_controller.dart';
 
 class AddPlayerScreen extends StatefulWidget {
-  final TeamFormController controller;
+  final PlayerFormTarget controller;
   const AddPlayerScreen({super.key, required this.controller});
 
   @override
@@ -27,20 +27,27 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
   }
 
   /// Tente d'ajouter le joueur. Retourne true si ça a marché, false si
-  /// le formulaire est invalide ou le numéro déjà pris (message affiché
-  /// dans ce cas, rien à faire de plus côté appelant).
-  bool _ajouter() {
+  /// le formulaire est invalide, l'effectif complet ou le numéro déjà
+  /// pris (le message est alors déjà affiché).
+  Future<bool> _ajouter() async {
     if (_nomController.text.trim().isEmpty) return false;
 
-    final numero = int.tryParse(_numeroController.text);
-    final erreur = widget.controller.verifierNumeroDisponible(numero);
-    if (erreur != null) {
-      Get.snackbar('Numéro déjà pris', erreur, snackPosition: SnackPosition.BOTTOM);
+    final erreurEffectif = widget.controller.verifierEffectifDisponible();
+    if (erreurEffectif != null) {
+      Get.snackbar('Effectif complet', erreurEffectif, snackPosition: SnackPosition.BOTTOM);
       return false;
     }
 
-    widget.controller.ajouterJoueur(PlayerDraft(nom: _nomController.text.trim(), numero: numero, poste: _poste));
-    return true;
+    final numero = int.tryParse(_numeroController.text);
+    final erreurNumero = widget.controller.verifierNumeroDisponible(numero);
+    if (erreurNumero != null) {
+      Get.snackbar('Numéro déjà pris', erreurNumero, snackPosition: SnackPosition.BOTTOM);
+      return false;
+    }
+
+    return widget.controller.ajouterJoueur(
+      PlayerDraft(nom: _nomController.text.trim(), numero: numero, poste: _poste),
+    );
   }
 
   void _reinitialiser() {
@@ -61,7 +68,7 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Obx(() => Text(widget.controller.nom.value, style: AppTextStyles.caption(context))),
+              Obx(() => Text(widget.controller.nomEquipe.value, style: AppTextStyles.caption(context))),
               const SizedBox(height: 16),
 
               Center(
@@ -136,15 +143,21 @@ class _AddPlayerScreenState extends State<AddPlayerScreen> {
               const Spacer(),
 
               ElevatedButton(
-                onPressed: () {
-                  if (_ajouter()) _reinitialiser();
+                onPressed: () async {
+                  final ajoute = await _ajouter();
+                  if (ajoute && mounted) _reinitialiser();
                 },
                 child: const Text('Ajouter et continuer'),
               ),
               const SizedBox(height: 8),
               OutlinedButton(
-                onPressed: () {
-                  if (_ajouter()) Get.back();
+                onPressed: () async {
+                  if (_nomController.text.trim().isEmpty) {
+                    Get.back();
+                    return;
+                  }
+                  final ajoute = await _ajouter();
+                  if (ajoute) Get.back();
                 },
                 child: const Text("Terminer l'ajout"),
               ),

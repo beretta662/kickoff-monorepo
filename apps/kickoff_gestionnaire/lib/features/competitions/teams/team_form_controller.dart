@@ -10,17 +10,30 @@ class PlayerDraft {
   PlayerDraft({required this.nom, this.numero, this.poste});
 }
 
-class TeamFormController extends GetxController {
+/// Contrat commun aux deux situations où on ajoute un joueur :
+/// - équipe en cours de création (joueurs gardés en mémoire jusqu'à l'enregistrement)
+/// - équipe déjà enregistrée (joueur inséré directement en base)
+/// AddPlayerScreen ne connaît que ce contrat, pas le détail de chaque cas.
+abstract class PlayerFormTarget {
+  RxString get nomEquipe;
+  String? verifierEffectifDisponible();
+  String? verifierNumeroDisponible(int? numero);
+  Future<bool> ajouterJoueur(PlayerDraft joueur);
+}
+
+class TeamFormController extends GetxController implements PlayerFormTarget {
   final String competitionId;
-  TeamFormController({required this.competitionId});
+  final int effectifMax;
+  TeamFormController({required this.competitionId, required this.effectifMax});
 
   final nom = ''.obs;
   final joueurs = <PlayerDraft>[].obs;
   final isSaving = false.obs;
 
-  /// Retourne un message d'erreur si ce numéro est déjà pris par un
-  /// autre joueur de l'équipe en cours de création, null sinon.
-  /// Un joueur sans numéro (null) ne provoque jamais de conflit.
+  @override
+  RxString get nomEquipe => nom;
+
+  @override
   String? verifierNumeroDisponible(int? numero) {
     if (numero == null) return null;
     final dejaPris = joueurs.any((j) => j.numero == numero);
@@ -28,10 +41,23 @@ class TeamFormController extends GetxController {
     return null;
   }
 
-  void ajouterJoueur(PlayerDraft joueur) => joueurs.add(joueur);
+  @override
+  String? verifierEffectifDisponible() {
+    if (joueurs.length >= effectifMax) {
+      return 'Effectif maximum atteint ($effectifMax joueurs).';
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> ajouterJoueur(PlayerDraft joueur) async {
+    joueurs.add(joueur);
+    return true;
+  }
+
   void retirerJoueur(int index) => joueurs.removeAt(index);
 
-    Future<Equipe?> enregistrer() async {
+  Future<Equipe?> enregistrer() async {
     if (nom.value.trim().isEmpty) {
       Get.snackbar('Nom requis', "Donnez un nom à l'équipe.", snackPosition: SnackPosition.BOTTOM);
       return null;
@@ -70,7 +96,7 @@ class TeamFormController extends GetxController {
             );
       }
 
-      return Equipe.fromMap(equipeResponse);
+      return Equipe(id: equipeId, nom: nom.value.trim(), joueursCount: joueurs.length);
     } catch (e) {
       Get.snackbar('Erreur', "Impossible d'enregistrer l'équipe.", snackPosition: SnackPosition.BOTTOM);
       return null;

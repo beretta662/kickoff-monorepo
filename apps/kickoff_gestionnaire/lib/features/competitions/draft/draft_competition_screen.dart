@@ -4,6 +4,7 @@ import 'package:kickoff_core/kickoff_core.dart';
 import '../../../routes.dart';
 import '../../../shared/widgets/dashed_border_painter.dart';
 import '../teams/add_team_screen.dart';
+import '../teams/team_detail_screen.dart';
 import 'draft_competition_controller.dart';
 import 'launch_competition_screen.dart';
 
@@ -117,8 +118,21 @@ class DraftCompetitionScreen extends StatelessWidget {
                     itemCount: controller.equipes.length,
                     itemBuilder: (context, index) {
                       final equipe = controller.equipes[index];
+                      final complete = equipe.joueursCount >= controller.nombreTitulaires.value;
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
+                        onTap: () => Get.to(() => TeamDetailScreen(
+                              equipeId: equipe.id,
+                              equipeNom: equipe.nom,
+                              effectifMax: controller.effectifMax.value,
+                              nombreTitulaires: controller.nombreTitulaires.value,
+                              onCountChanged: (count) {
+                                final i = controller.equipes.indexWhere((e) => e.id == equipe.id);
+                                if (i >= 0) {
+                                  controller.equipes[i] = Equipe(id: equipe.id, nom: equipe.nom, joueursCount: count);
+                                }
+                              },
+                            )),
                         leading: CircleAvatar(
                           radius: 14,
                           backgroundColor: AppColors.primaryLight,
@@ -128,7 +142,25 @@ class DraftCompetitionScreen extends StatelessWidget {
                           ),
                         ),
                         title: Text(equipe.nom, style: AppTextStyles.body(context)),
-                        trailing: const Icon(Icons.check, color: AppColors.success, size: 20),
+                        subtitle: Text(
+                          '${equipe.joueursCount} / ${controller.nombreTitulaires.value} titulaires',
+                          style: AppTextStyles.caption(context),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              complete ? Icons.check : Icons.close,
+                              color: complete ? AppColors.success : AppColors.danger,
+                              size: 20,
+                            ),
+                            if (!complete)
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
+                                onPressed: () => _confirmerSuppression(context, controller, equipe),
+                              ),
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -136,7 +168,10 @@ class DraftCompetitionScreen extends StatelessWidget {
 
                 InkWell(
                   onTap: () async {
-                    final equipe = await Get.to<Equipe>(() => AddTeamScreen(competitionId: competitionId));
+                    final equipe = await Get.to<Equipe>(() => AddTeamScreen(
+                          competitionId: competitionId,
+                          effectifMax: controller.effectifMax.value,
+                        ));
                     if (equipe != null) controller.equipes.add(equipe);
                   },
                   borderRadius: BorderRadius.circular(8),
@@ -188,6 +223,26 @@ class DraftCompetitionScreen extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+
+  void _confirmerSuppression(BuildContext context, DraftCompetitionController controller, Equipe equipe) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Retirer cette équipe ?'),
+        content: Text('${equipe.nom} et ses joueurs seront définitivement supprimés.'),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () {
+              controller.supprimerEquipe(equipe.id);
+              Get.back();
+            },
+            child: const Text('Retirer', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
     );
   }
 

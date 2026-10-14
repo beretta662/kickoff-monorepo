@@ -4,11 +4,14 @@ import 'package:kickoff_core/kickoff_core.dart';
 class Equipe {
   final String id;
   final String nom;
+  final int joueursCount;
 
-  Equipe({required this.id, required this.nom});
+  Equipe({required this.id, required this.nom, this.joueursCount = 0});
 
   factory Equipe.fromMap(Map<String, dynamic> map) {
-    return Equipe(id: map['id'] as String, nom: map['nom'] as String);
+    final joueursAgg = map['joueurs'] as List?;
+    final count = (joueursAgg != null && joueursAgg.isNotEmpty) ? joueursAgg.first['count'] as int? ?? 0 : 0;
+    return Equipe(id: map['id'] as String, nom: map['nom'] as String, joueursCount: count);
   }
 }
 
@@ -22,6 +25,8 @@ class DraftCompetitionController extends GetxController {
   final format = ''.obs;
   final statut = 'brouillon'.obs;
   final nombreEquipesPrevu = 0.obs;
+  final nombreTitulaires = 11.obs;
+  final effectifMax = 18.obs;
   final equipes = <Equipe>[].obs;
   final isLoading = true.obs;
 
@@ -61,6 +66,8 @@ class DraftCompetitionController extends GetxController {
       format.value = competitionResponse['format'] as String? ?? 'amateur';
       statut.value = competitionResponse['statut'] as String? ?? 'brouillon';
       nombreEquipesPrevu.value = competitionResponse['nombre_equipes'] as int? ?? 0;
+      nombreTitulaires.value = competitionResponse['nombre_titulaires'] as int? ?? 11;
+      effectifMax.value = competitionResponse['effectif_max'] as int? ?? 18;
 
       _allerRetour = competitionResponse['aller_retour'] as bool? ?? true;
       _joursDeMatch = List<String>.from(competitionResponse['jours_de_match'] as List? ?? []);
@@ -71,18 +78,22 @@ class DraftCompetitionController extends GetxController {
       _pause = competitionResponse['pause'] as int? ?? 10;
       _battement = competitionResponse['battement'] as int? ?? 10;
 
-      final equipesResponse = await SupabaseService.client
-          .from('equipes')
-          .select()
-          .eq('competition_id', competitionId)
-          .order('created_at');
-
-      equipes.value = (equipesResponse as List).map((e) => Equipe.fromMap(e)).toList();
+      await _loadEquipes();
     } catch (e) {
       Get.snackbar('Erreur', 'Impossible de charger la compétition.', snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> _loadEquipes() async {
+    final equipesResponse = await SupabaseService.client
+        .from('equipes')
+        .select('*, joueurs(count)')
+        .eq('competition_id', competitionId)
+        .order('created_at');
+
+    equipes.value = (equipesResponse as List).map((e) => Equipe.fromMap(e)).toList();
   }
 
   Future<void> changerNombreEquipesPrevu(int nouveauNombre) async {
@@ -96,6 +107,18 @@ class DraftCompetitionController extends GetxController {
     if ((response as List).isEmpty) {
       nombreEquipesPrevu.value = ancienneValeur;
       Get.snackbar('Erreur', "La modification n'a pas été enregistrée.", snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  /// Supprime une équipe (et ses joueurs) du brouillon. Uniquement
+  /// possible tant que la compétition n'est pas lancée.
+  Future<void> supprimerEquipe(String equipeId) async {
+    try {
+      await SupabaseService.client.from('joueurs').delete().eq('equipe_id', equipeId);
+      await SupabaseService.client.from('equipes').delete().eq('id', equipeId);
+      equipes.removeWhere((e) => e.id == equipeId);
+    } catch (e) {
+      Get.snackbar('Erreur', "Impossible de supprimer l'équipe.", snackPosition: SnackPosition.BOTTOM);
     }
   }
 
@@ -117,6 +140,17 @@ class DraftCompetitionController extends GetxController {
   Future<bool> lancerCompetition({required DateTime dateOuverture, required bool unSeulMatchCeJour}) async {
     if (equipes.length < 2) {
       Get.snackbar('Impossible de lancer', 'Il faut au moins 2 équipes.', snackPosition: SnackPosition.BOTTOM);
+      return false;
+    }
+
+    final equipesIncompletes = equipes.where((e) => e.joueursCount < nombreTitulaires.value).toList();
+    if (equipesIncompletes.isNotEmpty) {
+      final noms = equipesIncompletes.map((e) => e.nom).join(', ');
+      Get.snackbar(
+        'Effectifs incomplets',
+        '$noms n\'ont pas encore ${nombreTitulaires.value} joueurs minimum.',
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return false;
     }
 

@@ -8,7 +8,8 @@ import 'add_player_screen.dart';
 
 class AddTeamScreen extends StatefulWidget {
   final String competitionId;
-  const AddTeamScreen({super.key, required this.competitionId});
+  final int effectifMax;
+  const AddTeamScreen({super.key, required this.competitionId, required this.effectifMax});
 
   @override
   State<AddTeamScreen> createState() => _AddTeamScreenState();
@@ -21,7 +22,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
   @override
   void initState() {
     super.initState();
-    _controller = TeamFormController(competitionId: widget.competitionId);
+    _controller = TeamFormController(competitionId: widget.competitionId, effectifMax: widget.effectifMax);
   }
 
   @override
@@ -73,7 +74,7 @@ class _AddTeamScreenState extends State<AddTeamScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Effectif', style: AppTextStyles.body(context).copyWith(fontWeight: FontWeight.w600)),
-                      Text('${_controller.joueurs.length} joueurs', style: AppTextStyles.caption(context)),
+                      Text('${_controller.joueurs.length} / ${widget.effectifMax} joueurs', style: AppTextStyles.caption(context)),
                     ],
                   )),
               const SizedBox(height: 8),

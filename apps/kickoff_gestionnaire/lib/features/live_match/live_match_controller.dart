@@ -72,7 +72,7 @@ class LiveMatchController extends GetxController {
 
   void _startTimer() {
     _updateElapsed();
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) => _updateElapsed());
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) => _updateElapsed());
   }
 
   void _updateElapsed() {

@@ -12,4 +12,5 @@ abstract class AppRoutes {
   static const shares = '/shares';
   static const profile = '/profile';
   static const liveMatch = '/matches/live';
+  static const standings = '/competitions/standings';
 }
